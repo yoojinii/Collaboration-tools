@@ -17,7 +17,7 @@ const server = http.createServer(app); // HTTP 서버 생성
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root', // 사용자명
-    password: 'eun661023!', // 암호
+    password: '비밀', // 암호
     database: 'my_table', // 데이터베이스 이름
     timezone: 'Asia/Seoul' // MySQL 시간대 설정
 });
