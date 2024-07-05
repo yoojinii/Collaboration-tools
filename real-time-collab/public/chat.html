@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #ebebeb;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .chat-header {
+            background-color: #f39c12;
+            color: #ffffff;
+            padding: 18px;
+            text-align: center;
+            font-size: 2rem;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+        }
+        .chat-messages {
+            height: 500px; /* Increased height */
+            overflow-y: scroll;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .message {
+            margin-bottom: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            max-width: 90%;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+        .message.sent {
+            background-color: #3498db;
+            color: #000000;
+            align-self: flex-end;
+            float: right;
+            clear: both;
+        }
+        .message.received {
+            background-color: #fdfdfd;
+            color: #000000;
+            align-self: flex-start;
+            float: left;
+            clear: both;
+        }
+        .chat-input {
+            display: flex;
+            background-color: #f0f0f0;
+            border-top: 1px solid #dddddd;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            padding: 10px;
+        }
+        #myChat {
+            flex: 1;
+            height: 40px;
+            border-radius: 20px;
+            border: 1px solid #cccccc;
+            padding: 0 20px;
+            font-size: 14px;
+            outline: none;
+            margin-right: 10px;
+        }
+        #send {
+            width: 100px;
+            height: 40px;
+            border-radius: 20px;
+            background-color: #f39c12;
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            Chat Room
+        </div>
+        <div class="chat-messages" id="chatContent">
+            <!-- Messages will be dynamically added here -->
+        </div>
+        <div class="chat-input">
+            <input id="myChat" type="text" placeholder="Type your message...">
+            <button id="send">Send</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        var socket = io.connect('http://localhost:3001');
+        var username = null;
+
+        // Retrieve logged-in user's username
+        $.get('/session', function(data) {
+            username = data.username;
+        }).fail(function() {
+            alert('Failed to get session data. Please log in again.');
+            window.location.href = '/login';
+        });
+
+        socket.on('msg', function(data) {
+            displayMessage(data);
+        });
+
+        function displayMessage(message) {
+            var msgClass = message.includes(username) ? 'sent' : 'received';
+            var msgElement = '<div class="message ' + msgClass + '">' + message + '</div>';
+            $('#chatContent').append(msgElement);
+            $('#chatContent').scrollTop($('#chatContent')[0].scrollHeight);
+        }
+
+        function sendMessage() {
+            var msg = $('#myChat').val().trim();
+            if (msg !== '') {
+                socket.emit('msg', msg);
+                $('#myChat').val('');
+            }
+        }
+
+        $('#myChat').on('keyup', function(event) {
+            if (event.keyCode === 13) {
+                sendMessage();
+            }
+        });
+
+        $('#send').on('click', function() {
+            sendMessage();
+        });
+    </script>
+</body>
+</html>

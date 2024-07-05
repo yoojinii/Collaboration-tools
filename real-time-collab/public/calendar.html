@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Calendar</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.7.0/main.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+        #calendar {
+            max-width: 1400px; /* 가로 크기 증가 */
+            height: 800px;
+            margin: 50px auto;
+            background: white;
+            border-radius: 10px; /* 테두리 반경 증가 */
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2); /* 그림자 증가 */
+            padding: 30px; /* 패딩 증가 */
+        }
+        .fc-header-toolbar {
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            padding: 15px; /* 패딩 증가 */
+            font-size: 1.25rem; /* 글꼴 크기 증가 */
+        }
+        .fc-button {
+            background-color: #007bff;
+            border: none;
+            color: white;
+            font-size: 1.1rem; /* 글꼴 크기 증가 */
+        }
+        .fc-button:hover {
+            background-color: #0056b3;
+        }
+        .fc-daygrid-event {
+            background-color: #007bff;
+            border: none;
+            color: white;
+            font-size: 1rem; /* 글꼴 크기 증가 */
+            padding: 5px 10px; /* 패딩 추가 */
+        }
+        .modal-content {
+            border-radius: 10px; /* 테두리 반경 증가 */
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2); /* 그림자 증가 */
+        }
+        .modal-header {
+            background-color: #007bff;
+            color: white;
+            padding: 15px; /* 패딩 증가 */
+            font-size: 1.25rem; /* 글꼴 크기 증가 */
+        }
+        .modal-footer .btn-warning {
+            background-color: #ffc107;
+            border: none;
+            font-size: 1rem; /* 글꼴 크기 증가 */
+        }
+        .modal-footer .btn-warning:hover {
+            background-color: #e0a800;
+        }
+        .modal-footer .btn-secondary {
+            font-size: 1rem; /* 글꼴 크기 증가 */
+        }
+        .form-control {
+            font-size: 1.1rem; /* 글꼴 크기 증가 */
+            padding: 10px; /* 패딩 증가 */
+        }
+        .modal-title {
+            font-size: 1.5rem; /* 글꼴 크기 증가 */
+        }
+        .col-form-label {
+            font-size: 1.25rem; /* 글꼴 크기 증가 */
+        }
+    </style>
+</head>
+<body>
+    <div id="calendar"></div>
+
+    <div class="modal fade" id="calendarModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">일정을 입력하세요.</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="calendar_content" class="col-form-label">일정 내용</label>
+                        <input type="text" class="form-control" id="calendar_content">
+                        <label for="calendar_start_date" class="col-form-label">시작 날짜</label>
+                        <input type="date" class="form-control" id="calendar_start_date">
+                        <label for="calendar_end_date" class="col-form-label">종료 날짜</label>
+                        <input type="date" class="form-control" id="calendar_end_date">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-warning" id="addCalendar">추가</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js" defer></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.7.0/main.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                timeZone: 'Asia/Seoul',
+                initialView: 'dayGridMonth',
+                // 서버에서 이벤트 데이터를 가져오도록 설정
+                events: {
+                    url: '/api/calendar', // 이벤트 데이터를 가져올 API 엔드포인트
+                    method: 'GET' // GET 요청으로 데이터를 가져옵니다.
+                },
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+                },
+                editable: true,
+                selectable: true,
+                dayMaxEvents: true,
+                dateClick: function(info) {
+                    $('#calendarModal').modal('show');
+                    $('#calendar_start_date').val(info.dateStr);
+                }
+            });
+
+            calendar.render();
+
+            $('#addCalendar').on('click', function() {
+                var content = $('#calendar_content').val();
+                var start_date = new Date($('#calendar_start_date').val()).toISOString(); // ISO 형식으로 변환
+                var end_date = new Date($('#calendar_end_date').val()).toISOString(); // ISO 형식으로 변환
+
+                if (content && start_date && end_date) {
+                    $.ajax({
+                        type: 'POST',
+                        url: '/api/calendar',
+                        data: JSON.stringify({ content: content, start_date: start_date, end_date: end_date }),
+                        contentType: 'application/json',
+                        success: function(response) {
+                            console.log('Calendar event created successfully');
+                            calendar.refetchEvents(); // 이벤트 다시 로드
+                            $('#calendarModal').modal('hide');
+                            $('#calendar_content').val('');
+                            $('#calendar_start_date').val('');
+                            $('#calendar_end_date').val('');
+                        },
+                        error: function(err) {
+                            console.error('Error creating calendar event:', err);
+                        }
+                    });
+                } else {
+                    alert('모든 필드를 입력하세요.');
+                }
+            });
+
+        });
+
+    </script>
+</body>
+</html>

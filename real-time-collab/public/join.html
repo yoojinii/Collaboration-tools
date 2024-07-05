@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>회원가입</title>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f0f0f0;
+        height: 100vh;
+    }
+    .container {
+        width: 100%;
+        max-width: 600px;
+        padding: 20px;
+        box-sizing: border-box;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+    }
+    h1 {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    form p {
+        margin: 0;
+        margin-bottom: 10px;
+        font-weight: bold;
+    }
+    input[type="text"],
+    input[type="password"],
+    input[type="email"] {
+        width: 100%;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+    }
+    button {
+        width: 100%;
+        padding: 15px;
+        margin-bottom: 10px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        box-sizing: border-box;
+    }
+    button[type="submit"] {
+        background-color: #4CAF50;
+        color: white;
+    }
+    button[type="button"] {
+        background-color: #007BFF;
+        color: white;
+    }
+    .button-container {
+        display: flex;
+        flex-direction: column;
+    }
+    .button-container a {
+        width: 100%;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>TNOTE</h1>
+    <form id="signupForm" onsubmit="submitForm(event)">
+        <p>이름</p>
+        <input type="text" id="username" name="username" placeholder="이름을 입력하세요." required>
+        <p>이메일</p>
+        <input type="email" id="email" name="email" placeholder="이메일을 입력하세요." required>
+        <p>아이디</p>
+        <input type="text" id="id" name="id" placeholder="아이디를 입력하세요." required>
+        <p>비밀번호</p>
+        <input type="password" id="password" name="password" placeholder="비밀번호를 입력하세요." required>
+        
+        <div class="button-container">
+            <button type="submit">확인</button>
+            <a href="login.html"><button type="button">로그인하러 가기</button></a>
+        </div>
+    </form>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="client.js" defer></script>
+<script>
+    function submitForm(event) {
+        event.preventDefault();
+
+        const formData = new FormData(document.getElementById('signupForm'));
+        const data = {
+            id: formData.get('id'),
+            username: formData.get('username'),
+            password: formData.get('password'),
+            email: formData.get('email')
+        };
+
+        fetch('/signup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.text();
+            } else {
+                throw new Error('회원가입 실패');
+            }
+        })
+        .then(message => {
+            alert(message);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('회원가입 실패');
+        });
+    }
+</script>
+</body>
+</html>

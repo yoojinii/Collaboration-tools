@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>group page</title>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+        background-color: #f3f3f3; /* 밝고 깨끗한 배경색 적용 */
+    }
+    .container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
+    .menu-section {
+        background-color: #ffffff; /* 미묘한 색상 추가 */
+        color: #333;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+    }
+
+    a {
+        text-decoration: none;
+        color: #333;
+        font-size: 16px; /* 버튼 폰트 크기 조정 */
+        font-weight: 500;
+    }
+    .content-section {
+        display: flex;
+        flex: 1;
+    }
+    .left-section {
+        flex: 1;
+        background-color: #ffffff; /* 미묘한 색상 추가 */
+        padding: 20px;
+        border-right: 1px solid #ccc;
+        box-sizing: border-box;
+        overflow-y: auto; /* 섹션에 스크롤 처리 추가 */
+    }
+    .right-section {
+        flex: 9;
+        padding: 20px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+    }
+    #workspace-list {
+        list-style-type: none;
+        padding: 0;
+    }
+    #workspace-list li {
+        margin-bottom: 10px;
+        cursor: pointer;
+    }
+    #project-name {
+        font-size: 20px;
+        font-weight: bold;
+    }
+    .toolbar {
+        margin-bottom: 10px;
+        display: flex;
+        gap: 10px;
+        background-color: #ffffff; /* 미묘한 색상 추가 */
+        color: #333;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+    }
+    .toolbar button, .toolbar input[type="file"], .toolbar input[type="text"] {
+        padding: 7px 15px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        background-color: #ffffff; /* 미묘한 색상 추가 */
+        cursor: pointer;
+    }
+    .toolbar button:hover, .toolbar input[type="file"]:hover, .toolbar input[type="text"]:hover {
+        background-color: #f5f5f5; /* 버튼 호버 시 배경색 변경 */
+    }
+    .toolbar button:active, .toolbar input[type="file"]:active, .toolbar input[type="text"]:active {
+        background-color: #e0e0e0; /* 버튼 클릭 시 배경색 변경 */
+    }
+    textarea {
+        flex: 1;
+        resize: none;
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    input[type="text"] {
+        flex: 1;
+        padding: 7px 15px; /* 입력 필드 크기 조정 */
+        font-size: 16px; /* 입력 필드 폰트 크기 조정 */
+    }
+    #itemTitle {
+        width:1602px;
+        margin-bottom: 10px; /* 아래 여백 추가 */
+    }
+    button[type="button"] {
+        padding: 6px 14px; /* 버튼 크기 조정 */
+        font-size: 15px; /* 버튼 폰트 크기 조정 */
+    }
+    #group{
+        margin-top: 70px;
+    }
+    #group-name{
+        width: 160px;
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <div class="menu-section">
+            <div><a href="todo.html">todo list</a></div>
+            <div><a href="calendar.html">Calendar</a></div>
+            <div id="project-name">workspace</div>
+        </div>
+        <div class="content-section">
+            <div class="left-section">
+                <h2>User Invite</h2>
+                <form id="inviteForm">
+                    <input type="email" id="email" placeholder="메일을 입력하세요" required>
+                    <button type="submit">초대</button>
+                </form>
+               
+              
+                <h2 id="group">Group Page</h2>
+                <ul id="itemList"></ul>
+
+            </div>
+            <div class="right-section">
+                <div class="toolbar">
+                    <button onclick="makeUnderline()">underline</button>
+                    <button onclick="makeBold()">bold</button>
+                    <input type="color" id="colorPicker">
+                    <button onclick="changeTextColor()">color</button>
+                    <input type="file" id="imageUpload" accept="image/*" onchange="uploadImage(event)">
+                    <button onclick="alignLeft()">Align Left</button>
+                    <button onclick="alignCenter()">Align Center</button>
+                    <button onclick="alignRight()">Align Right</button>
+                    <input type="text" id="urlInput" placeholder="URL 입력">
+                    <button onclick="insertLink()">URL</button>
+                </div>
+                <form id="addItemForm">
+                    <input type="text" id="itemTitle" placeholder="제목을 입력하세요"><br>
+                    <textarea id="itemContent" placeholder="내용을 입력하세요" rows="30" cols="200" oninput="updateContent(this.value)"></textarea><br>
+                    <button type="button" onclick="addItem()">save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js" defer></script>
+    <!-- 클라이언트 측 스크립트 -->
+    <script>
+        const socket = io('http://localhost:3001'); // 웹소켓 서버 주소
+
+        let items = [];
+        const workspaceName = window.location.hash.substring(1);
+        var projectNameElement = document.getElementById('project-name');
+        projectNameElement.textContent = workspaceName;
+
+        socket.on('connect', function() {
+            console.log('소켓 연결이 열렸습니다.');
+        });
+
+        socket.on('updateItems', function(updatedItems) {
+            items = updatedItems;
+            displayItems();
+        });
+
+        function addItem() {
+            var title = document.getElementById('itemTitle').value;
+            var content = document.getElementById('itemContent').value;
+            if (title.trim() !== '' && content.trim() !== '') {
+                const item = { title: title, content: content };
+                items.push(item);
+                displayItems();
+                document.getElementById('itemTitle').value = '';
+                document.getElementById('itemContent').value = '';
+                socket.emit('addItem', item); // Send new item to server
+            } else {
+                alert('제목과 내용을 입력하세요.');
+            }
+        }
+
+        function displayItems() {
+            var itemList = document.getElementById('itemList');
+            itemList.innerHTML = '';
+            items.forEach((item, index) => {
+                var li = document.createElement('li');
+                var link = document.createElement('a');
+                link.href = '#';
+                link.textContent = item.title;
+                link.onclick = function() {
+                    document.getElementById('itemTitle').value = item.title;
+                    document.getElementById('itemContent').value = item.content;
+                };
+                li.appendChild(link);
+                itemList.appendChild(li);
+            });
+        }
+
+
+        function formatText(command) {
+            document.execCommand(command);
+        }
+
+        function makeBold() {
+            formatText('bold');
+        }
+
+        function makeUnderline() {
+            formatText('underline');
+        }
+
+        function alignLeft() {
+            document.getElementById("itemContent").style.textAlign = "left";
+        }
+
+        function alignCenter() {
+            document.getElementById("itemContent").style.textAlign = "center";
+        }
+
+        function alignRight() {
+            document.getElementById("itemContent").style.textAlign = "right";
+        }
+
+        function uploadImage(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = '100%';
+                const content = document.getElementById('itemContent');
+                content.value += '<img src="' + e.target.result + '">';
+            };
+            reader.readAsDataURL(file);
+        }
+
+
+        function changeTextColor() {
+            const color = document.getElementById('colorPicker').value;
+            formatText('foreColor', color);
+        }
+ 
+
+        // 페이지 로드 시 사용자 목록을 가져와서 채워넣음
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchUserList();
+        });
+
+  
+
+        
+    </script>
+</body>
+</html>
+

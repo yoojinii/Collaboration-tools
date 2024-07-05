@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <title>To Do List</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap" />
+    <style>
+      * {
+        box-sizing: border-box;
+        font-family: "Jua", sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: #f5f5f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        background-color: #fff;
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 700px;
+        height: 800px;
+        padding: 20px;
+        text-align: center;
+      }
+
+      header h1 {
+        margin-bottom: 20px;
+        color: #333;
+      }
+
+      .input-wrapper {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+
+      #input-box {
+        width: calc(100% - 50px);
+        height: 45px;
+        padding: 0 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 1em;
+      }
+
+      #input-button {
+        height: 45px;
+        width: 45px;
+        background-color: #61974b;
+        border: none;
+        border-radius: 5px;
+        color: white;
+        font-size: 1.5em;
+        cursor: pointer;
+      }
+
+      .to-do-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .to-do-list li {
+        background-color: #fafafa;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        margin-bottom: 10px;
+        transition: background-color 0.3s;
+      }
+
+      .to-do-list li:hover {
+        background-color: #f0f0f0;
+      }
+
+      .checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+      }
+
+      .to-do-list li span {
+        flex-grow: 1;
+        margin-left: 10px;
+        text-align: left;
+        font-size: 1em;
+      }
+
+      .to-do-list li img {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>To Do List</h1>
+        <div class="input-wrapper">
+          <input type="text" id="input-box" placeholder="Add a task..." onkeypress="enterKey(event)" />
+          <button id="input-button" onclick="onClickInputButton()">+</button>
+        </div>
+      </header>
+      <main>
+        <ul class="to-do-list">
+          <li>
+            <input type="checkbox" class="checkbox" onclick="onClickCheckbox(this)" />
+            <span>first item</span>
+            <img src="trashcan.png" alt="delete" onclick="onClickDeleteButton(this)" />
+          </li>
+          <li>
+            <input type="checkbox" class="checkbox" onclick="onClickCheckbox(this)" />
+            <span>second item</span>
+            <img src="trashcan.png" alt="delete" onclick="onClickDeleteButton(this)" />
+          </li>
+        </ul>
+      </main>
+    </div>
+    <script src="client.js" defer></script>
+    <script>
+      // 페이지가 로드될 때 ToDo 목록을 가져오는 함수
+      function fetchTodos() {
+          fetch('/api/todos', {
+              method: 'GET',
+              headers: {
+                  'Content-Type': 'application/json'
+              }
+          })
+          .then(response => {
+              if (response.ok) {
+                  return response.json();
+              }
+              throw new Error('Failed to fetch todos');
+          })
+          .then(data => {
+              // ToDo 목록을 받아와서 클라이언트 측 UI에 반영
+              const todoListElem = document.querySelector(".to-do-list");
+              todoListElem.innerHTML = ""; // 기존 목록 초기화
+
+              data.forEach(todo => {
+                  const todoItem = `<li>
+                                      <input type="checkbox" class="checkbox" onclick="onClickCheckbox(this)" />
+                                      <span>${todo.content}</span>
+                                      <img src="trashcan.png" alt="delete" onclick="onClickDeleteButton(this)" />
+                                    </li>`;
+                  todoListElem.insertAdjacentHTML('beforeend', todoItem);
+              });
+          })
+          .catch(error => {
+              console.error('Error fetching todos:', error);
+          });
+      }
+
+      // 페이지 로드 시 ToDo 목록 가져오기
+      document.addEventListener('DOMContentLoaded', fetchTodos);
+
+      // ToDo 생성 후 UI 업데이트
+      function onClickInputButton() {
+          const inputBoxElem = document.querySelector("#input-box");
+          const inputBoxValue = inputBoxElem.value.trim();
+          if (inputBoxValue) {
+              fetch('/api/todos', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ content: inputBoxValue })
+              })
+              .then(response => {
+                  if (response.ok) {
+                      return response.text();
+                  }
+                  throw new Error('Failed to create todo');
+              })
+              .then(data => {
+                  console.log('Todo created successfully');
+                  inputBoxElem.value = "";
+
+                  // ToDo 생성 후 다시 ToDo 목록 가져오기
+                  fetchTodos();
+              })
+              .catch(error => {
+                  console.error('Error creating todo:', error);
+              });
+          }
+      }
+
+
+
+
+      function enterKey(event) {
+        if (event.keyCode === 13) {
+          onClickInputButton();
+        }
+      }
+
+      function onClickDeleteButton(deleteElem) {
+        deleteElem.parentElement.remove();
+      }
+
+      function onClickCheckbox(checkboxElem) {
+        const liElem = checkboxElem.parentElement;
+        const spanElem = liElem.querySelector("span");
+        if (checkboxElem.checked) {
+          spanElem.innerHTML = `<s>${spanElem.innerText}</s>`;
+        } else {
+          spanElem.innerHTML = `${spanElem.innerText}`;
+        }
+      }
+    </script>
+  </body>
+</html>

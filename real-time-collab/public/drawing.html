@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drawing Board</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      font-family: 'Comic Sans MS', cursive; /* Playful font */
+      background-color: #f0f0f0; /* Light gray */
+    }
+
+    #toolbar {
+      display: flex;
+      justify-content: space-around;
+      background: #3498db; /* Soft blue */
+      padding: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+    }
+
+    #toolbar button,
+    #toolbar input {
+      margin: 0 5px;
+      padding: 10px;
+      border: none;
+      border-radius: 50%; /* Make buttons round */
+      font-size: 14px;
+      cursor: pointer;
+      text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5); /* Text shadow */
+    }
+
+    #toolbar button {
+      background: #2ecc71; /* Green */
+      color: #fff; /* White text */
+    }
+
+    #toolbar button.active {
+      background: #e74c3c; /* Red */
+      border: 2px solid #c0392b; /* Red border for active button */
+    }
+
+    #toolbar input[type="color"] {
+      padding: 0;
+      width: 30px;
+      height: 30px;
+    }
+
+    #size-picker {
+      width: 80px; /* Adjust size picker width */
+    }
+
+    canvas {
+      display: block;
+      flex: 1;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+    }
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <button id="pencil" class="active">Pencil</button>
+    <button id="eraser">Eraser</button>
+    <button id="new-board">New Board</button>
+    <button id="save-board">Save Board</button>
+    <input type="color" id="color-picker" value="#000000">
+    <input type="range" id="size-picker" min="1" max="10" value="5">
+  </div>
+  <canvas id="drawing-board"></canvas>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const canvas = document.getElementById('drawing-board');
+    const context = canvas.getContext('2d');
+    const socket = io();
+
+    let drawing = false;
+    let current = { x: 0, y: 0 };
+    let color = '#000000';
+    let size = 5;
+    let tool = 'pencil';
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight - document.getElementById('toolbar').offsetHeight;
+
+    document.getElementById('color-picker').addEventListener('input', (event) => {
+      color = event.target.value;
+    });
+
+    document.getElementById('size-picker').addEventListener('input', (event) => {
+      size = event.target.value;
+    });
+
+    document.getElementById('pencil').addEventListener('click', () => {
+      tool = 'pencil';
+    });
+
+    document.getElementById('eraser').addEventListener('click', () => {
+      tool = 'eraser';
+    });
+
+    document.getElementById('new-board').addEventListener('click', () => {
+      // Clear the canvas
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      drawings = []; // Clear drawings history
+
+      // Emit an event to notify other clients to clear their canvases
+      socket.emit('new-board');
+    });
+
+    document.getElementById('save-board').addEventListener('click', () => {
+      const dataURL = canvas.toDataURL(); // Get the canvas image as data URL
+      const a = document.createElement('a');
+      a.href = dataURL;
+      a.download = 'drawing.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+
+    document.querySelectorAll('#toolbar button').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('#toolbar button').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        tool = button.id;
+      });
+    });
+
+    canvas.addEventListener('mousedown', (event) => {
+      drawing = true;
+      current.x = event.clientX;
+      current.y = event.clientY;
+    });
+
+    canvas.addEventListener('mouseup', (event) => {
+      if (drawing) {
+        draw(event);
+        drawing = false;
+        context.beginPath();
+      }
+    });
+
+    canvas.addEventListener('mousemove', draw);
+
+    function draw(event) {
+      if (!drawing) return;
+
+      const x = event.clientX;
+      const y = event.clientY;
+
+      if (tool === 'pencil' || tool === 'eraser') {
+        const strokeColor = tool === 'eraser' ? '#fff' : color;
+        drawLine(current.x, current.y, x, y, strokeColor, size, true);
+        current.x = x;
+        current.y = y;
+      }
+    }
+
+    let drawings = [];
+
+    function drawAll() {
+      drawings.forEach(d => {
+        if (d.tool === 'line') {
+          drawLine(d.x0, d.y0, d.x1, d.y1, d.color, d.size, false);
+        }
+      });
+    }
+
+    function drawLine(x0, y0, x1, y1, color, size, emit) {
+      context.beginPath();
+      context.moveTo(x0, y0);
+      context.lineTo(x1, y1);
+      context.strokeStyle = color;
+      context.lineWidth = size;
+      context.stroke();
+      context.closePath();
+
+      if (!emit) return;
+      const w = canvas.width;
+      const h = canvas.height;
+
+      socket.emit('drawing', {
+        tool: 'line',
+        x0: x0 / w,
+        y0: y0 / h,
+        x1: x1 / w,
+        y1: y1 / h,
+        color: color,
+        size: size
+      });
+
+      drawings.push({
+        tool: 'line',
+        x0: x0,
+        y0: y0,
+        x1: x1,
+        y1: y1,
+        color: color,
+        size: size
+      });
+    }
+
+    socket.on('drawing', (data) => {
+      const w = canvas.width;
+      const h = canvas.height;
+      if (data.tool === 'line') {
+        drawLine(data.x0 * w, data.y0 * h, data.x1 * w, data.y1 * h, data.color, data.size, false);
+      }
+    });
+
+    socket.on('new-board', () => {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      drawings = []; // Clear drawings history
+    });
+
+    window.addEventListener('resize', onResize, false);
+    function onResize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight - document.getElementById('toolbar').offsetHeight;
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      drawAll();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TNoTE workspace</title>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f4f4f9;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    .container {
+        display: flex;
+        width: 95%;
+        max-width: 1400px;
+        height: 95vh;
+        background-color: #ffffff;
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    .left-section {
+        flex: 0.75;
+        padding: 20px;
+        border-right: 1px solid #ddd;
+        box-sizing: border-box;
+        background-color: #e3f2fd;
+        overflow-y: auto;
+    }
+    .right-section {
+        flex: 4;
+        display: flex;
+        flex-direction: column;
+        background-color: #f1f8e9;
+    }
+    .top-section {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #ddd;
+        background-color: #c8e6c9;
+    }
+    .bottom-section {
+        flex: 4;
+        display: flex;
+        overflow-y: auto;
+        background-color: #ffffff;
+    }
+    .bottom-left {
+        flex: 1;
+        padding: 20px;
+        box-sizing: border-box;
+        background-color: #f7f7f7;
+        border-right: 1px solid #ddd;
+        overflow-y: auto;
+    }
+    .bottom-right {
+        flex: 4;
+        padding: 20px;
+        box-sizing: border-box;
+        background-color: #ffffff;
+        overflow-y: auto;
+    }
+    .newspace {
+        padding: 15px 30px;
+        border-radius: 5px;
+        font-size: 16px;
+        background-color: #007BFF;
+        color: #ffffff;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    .newspace:hover {
+        background-color: #0056b3;
+    }
+    #date-container {
+        font-size: 24px;
+        color: #555;
+    }
+    #title {
+        font-size: medium;
+    }
+    #recent-activity-title {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+    #recent-activity-list {
+        list-style: none;
+        padding: 0;
+    }
+    #recent-activity-list li {
+        margin-bottom: 10px;
+        padding: 10px;
+        background-color: #bbdefb;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    #itemList {
+        list-style: none;
+        padding: 0;
+    }
+    #itemList li {
+        margin-bottom: 10px;
+        padding: 10px;
+        background-color: #f0f0f0;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    #addItemForm {
+        display: flex;
+        flex-direction: column;
+    }
+    #itemTitle,
+    #itemContent {
+        width: 100%;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+    #itemContent {
+        resize: none;
+    }
+    #addItemForm button {
+        width: 150px;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 16px;
+        background-color: #5d615d;
+        color: #ffffff;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        align-self: flex-end;
+    }
+    #addItemForm button:hover {
+        background-color: #388E3C;
+    }
+    #date-container {
+        font-size: 32px; /* 폰트 크기 조정 */
+        color: #fff; /* 텍스트 색상을 흰색으로 설정 */
+        margin-right: 40px;
+    }
+
+    .chat-button {
+        margin-top: 20px;
+        display: inline-block;
+        background-color: #71b877;
+        color: white;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        font-size: 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        border: none;
+    }
+    .chat-button:hover {
+        background-color: #7e817e;
+    }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-section">
+            <h2 id="recent-activity-title">#Workspace</h2>
+            <ul id="recent-activity-list"></ul>
+        </div>
+        <div class="right-section">
+            <div class="top-section">
+                <div>
+                    <h3 id="greeting"></h3>
+                    <button class="newspace" type="submit">+ 새 워크스페이스 만들기</button>
+                    <div>
+                        <button class="chat-button" onclick="location.href='chat.html'">Chat</button>
+                        <button class="chat-button" onclick="location.href='drawing.html'">Board</button>
+                        <button class="chat-button" onclick="location.href='todo.html'">TodoList</button>
+                        <button class="chat-button" onclick="location.href='calendar.html'">Calendar</button>
+                    </div>
+                </div>
+                <div id="date-container"></div>
+            </div>
+            <div class="bottom-section">
+                <div class="bottom-left">
+                    <h2>My Page</h2>
+                    <ul id="itemList"></ul>
+                </div>
+                <div class="bottom-right">
+                    <form id="addItemForm">
+                        <input type="text" id="itemTitle" placeholder="제목을 입력하세요"><br>
+                        <textarea id="itemContent" placeholder="내용을 입력하세요" rows="10"></textarea><br>
+                        <button type="button" onclick="addItem()">저장</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js" defer></script>
+    <script>
+        let items = [];
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchUserDetails();
+            fetchMemos();
+            fetchWorkspaces();
+        });
+
+        function fetchUserDetails() {
+            fetch('http://localhost:3001/api/user')
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            throw new Error('Login required');
+                        } else {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('greeting').textContent = `안녕하세요, ${data.username}님 ♬☆♡`;
+                })
+                .catch(error => {
+                    console.error('Error fetching user details:', error);
+                    if (error.message === 'Login required') {
+                        window.location.href = '/login'; // 로그인 페이지로 리다이렉트
+                    }
+                });
+        }
+
+
+
+        function fetchMemos() {
+            fetch('http://localhost:3001/api/memos')
+                .then(response => response.json())
+                .then(data => {
+                    items = data.map(memo => ({ title: memo.memo_title, content: memo.content })); // 변경
+                    displayItems();
+                })
+                .catch(error => {
+                    console.error('Error fetching memos:', error);
+                });
+        }
+
+        function addItem() {
+            var title = document.getElementById('itemTitle').value;
+            var content = document.getElementById('itemContent').value;
+            if(title.trim() !== '' && content.trim() !== '') {
+                const memo = {
+                    title: title,
+                    content: content
+                };
+
+                fetch('http://localhost:3001/api/memos', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(memo) // 제목과 내용을 함께 전송
+                })
+                .then(response => {
+                    if (response.ok) {
+                        items.push(memo);
+                        displayItems();
+                        document.getElementById('itemTitle').value = '';
+                        document.getElementById('itemContent').value = '';
+                    } else {
+                        alert('Error saving memo');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            } else {
+                alert('제목과 내용을 입력하세요.');
+            }
+        }
+
+        function displayItems() {
+            var itemList = document.getElementById('itemList');
+            itemList.innerHTML = ''; // 리스트 초기화
+
+            // 각 메모마다 제목과 내용을 표시
+            items.forEach((item, index) => {
+                var li = document.createElement('li');
+                var link = document.createElement('a'); // 링크 생성
+                link.href = '#'; // 임시 링크 설정
+                link.textContent = item.title; // 제목 설정
+                link.onclick = function() { // 링크 클릭 시 이벤트 핸들러
+                    // 해당 메모의 제목과 내용을 입력 폼에 채움
+                    document.getElementById('itemTitle').value = item.title;
+                    document.getElementById('itemContent').value = item.content;
+                };
+                li.appendChild(link); // 링크를 리스트 아이템에 추가
+                itemList.appendChild(li);
+            });
+        }
+
+
+        // 현재 날짜를 화면에 표시
+        function displayCurrentDate() {
+            var now = new Date();
+            return now.getFullYear() + '. ' + (now.getMonth() + 1) + '. '            + now.getDate() ;
+        }
+        var dateContainer = document.getElementById('date-container');
+        dateContainer.innerHTML = displayCurrentDate();
+
+
+
+        
+        // 클라이언트 측에서 새 워크스페이스를 불러오기 위한 함수
+        function fetchWorkspaces() {
+            fetch('http://localhost:3001/api/workspaces', {
+                method: 'GET',
+                credentials: 'include' // 세션 정보를 서버에 전송
+            })
+            .then(response => response.json())
+            .then(data => {
+                const workspaceList = document.getElementById('recent-activity-list');
+                workspaceList.innerHTML = ''; // 리스트 초기화
+                data.forEach(workspace => {
+                    const li = document.createElement('li');
+                    const link = document.createElement('a');
+                    link.textContent = workspace.workspace_name;
+                    link.href = `workspace.html#${encodeURIComponent(workspace.workspace_name)}`;
+                    li.appendChild(link);
+                    workspaceList.appendChild(li);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching workspaces:', error);
+            });
+        }
+
+
+        // 클라이언트 측에서 새 워크스페이스를 만들 때, 그룹 이름을 서버로 전송
+        function createNewWorkspace() {
+            const workspaceName = prompt("새 워크스페이스의 이름을 입력하세요:");
+            if (workspaceName) {
+                fetch('http://localhost:3001/api/workspaces', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ workspace_name: workspaceName })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        addWorkspaceToRecentActivity(workspaceName);
+                        fetchWorkspaces(); // Refresh the workspace list
+                    } else {
+                        console.error('Error creating new workspace.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+        }
+
+        // 최근 활동에 워크스페이스 추가
+        function addWorkspaceToRecentActivity(workspaceName) {
+            var recentActivityList = document.getElementById('recent-activity-list');
+            var newWorkspaceItem = document.createElement('li');
+            var newWorkspaceLink = document.createElement('a');
+            newWorkspaceLink.textContent = workspaceName;
+            newWorkspaceLink.href = "workspace.html#" + encodeURIComponent(workspaceName);
+            newWorkspaceLink.addEventListener('click', function() {
+                window.location.href = "workspace.html#" + encodeURIComponent(workspaceName);
+            });
+            newWorkspaceItem.appendChild(newWorkspaceLink);
+            recentActivityList.appendChild(newWorkspaceItem);
+        }
+
+        // 새 워크스페이스 버튼 클릭 시 이벤트 처리
+        var newSpaceButton = document.querySelector('.newspace');
+        newSpaceButton.addEventListener('click', createNewWorkspace);
+
+    </script>
+</body>
+</html>
+
